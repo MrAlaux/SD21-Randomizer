@@ -6,6 +6,69 @@
 
 typedef enum { false, true } boolean;
 
+boolean Get_Number(char **getter)
+{
+  const size_t MAXCHARS = 32;
+  char input[MAXCHARS];
+  size_t input_size;
+
+  fgets(input, MAXCHARS, stdin);
+
+  if (!(input_size = strlen(input) - 1)) { return true; }
+
+  *getter = strdup(input);
+  return false;
+}
+
+boolean Get_Int(int *getter)
+{
+  char *input;
+  size_t input_size;
+
+  if (Get_Number(&input)) { goto error; }
+
+  input_size = strlen(input) - 1; // Don't count the newline
+
+  for (int i = 0;  i < input_size;  i++)
+  {
+    if (!('0' <= input[i] && input[i] <= '9'))
+    { goto error; }
+  }
+
+  *getter = atoi(input);
+  free(input);
+  return false;
+
+  error: return true;
+}
+
+boolean Get_Float(float *getter)
+{
+  char *input;
+  size_t input_size;
+  int sep = 0;
+
+  if (Get_Number(&input)) { goto error; }
+
+  input_size = strlen(input) - 1; // Don't count the newline
+
+  for (int i = 0;  i < input_size;  i++)
+  {
+    if (input[i] == '.') {
+      if (1 < ++sep)
+      { goto error; }
+    }
+    else if (!('0' <= input[i] && input[i] <= '9'))
+    { goto error; }
+  }
+
+  *getter = atof(input);
+  free(input);
+  return false;
+
+  error: return true;
+}
+
 
 #define MAXPARMS 8
 
@@ -47,14 +110,14 @@ const func_t funcs[NUMFUNCS] = {
 float min[MAXPARMS], max[MAXPARMS];
 
 // Taken from StackOverflow
-float frandom(int index)
+float Random_Float(int index)
 {
   return min[index] + ((rand() / (float) RAND_MAX) * (max[index] - min[index]));
 }
 
 char parameters[MAXPARMS][BUFSIZ];
 
-char *random(int index)
+char *Random(int index)
 {
   char *const parameter = parameters[index];
 
@@ -64,11 +127,11 @@ char *random(int index)
   else switch (func->parmtype[index])
   {
     case T_INT:
-      snprintf(parameter, BUFSIZ, "%i", (int) round(frandom(index)));
+      snprintf(parameter, BUFSIZ, "%i", (int) round(Random_Float(index)));
       break;
 
     case T_FLOAT:
-      snprintf(parameter, BUFSIZ, "%0.1f", frandom(index));
+      snprintf(parameter, BUFSIZ, "%0.1f", Random_Float(index));
       break;
 
     case T_STRING:
@@ -83,10 +146,10 @@ char *random(int index)
 int main()
 {
   int i;
-  int numstates, func_index;
+  int num_states, func_index;
   FILE *fptr;
 
-  #if 1
+  #if 0
   #define TEST
   #endif
 
@@ -94,12 +157,16 @@ int main()
 
   srand(time(NULL));
 
-  printf("Enter number of states [int]: ");
-  #ifndef TEST
-  scanf("%i", &numstates);
-  #else
-  printf("%i\n", numstates = 16);
-  #endif
+  while (true) {
+    printf("Enter number of states [int]: ");
+    #ifndef TEST
+    if (!Get_Int(&num_states)) { break; }
+    #else
+    printf("%i\n", num_states = 16);
+    break;
+    #endif
+  }
+
   puts("");
 
   printf("Available functions:\n");
@@ -107,12 +174,16 @@ int main()
   { printf("[%i] %s(%s)\n", i, funcs[i].name, funcs[i].description); }
   puts("");
 
-  printf("Select function [int]: ");
-  #ifndef TEST
-  scanf("%i", &func_index);
-  #else
-  printf("%i\n", func_index = 0);
-  #endif
+  while (true) {
+    printf("Select function [int]: ");
+    #ifndef TEST
+    if (!Get_Int(&func_index)) { break; }
+    #else
+    printf("%i\n", func_index = 0);
+    break;
+    #endif
+  }
+
   puts("");
 
   func = &funcs[func_index];
@@ -121,19 +192,25 @@ int main()
   {
     if (func->parmtype[i] == T_STRING) { continue; }
 
-    printf("Enter min%i [float]: ", i + 1);
-    #ifndef TEST
-    scanf("%f", &min[i]);
-    #else
-    printf("%f\n", min[i] = i + 1.0);
-    #endif
+    while (true) {
+      printf("Enter min%i [float]: ", i + 1);
+      #ifndef TEST
+      if (!Get_Float(&min[i])) { break; }
+      #else
+      printf("%f\n", min[i] = i + 1.0);
+      break;
+      #endif
+    }
 
-    printf("Enter max%i [float]: ", i + 1);
-    #ifndef TEST
-    scanf("%f", &max[i]);
-    #else
-    printf("%f\n", max[i] = i + 2.0);
-    #endif
+    while (true) {
+      printf("Enter max%i [float]: ", i + 1);
+      #ifndef TEST
+      if (!Get_Float(&max[i])) { break; }
+      #else
+      printf("%f\n", max[i] = i + 2.0);
+      break;
+      #endif
+    }
 
     puts("");
   }
@@ -155,14 +232,14 @@ int main()
       func->name, func->prototype
     );
 
-    for (i = 1;  i <= numstates;  i++)
+    for (i = 1;  i <= num_states;  i++)
     {
       char buffer[BUFSIZ];
 
       snprintf(
         buffer, BUFSIZ,
         format,
-        i, random(0), random(1), random(2), random(3), random(4), random(5), random(6), random(7)
+        i, Random(0), Random(1), Random(2), Random(3), Random(4), Random(5), Random(6), Random(7)
       );
 
       printf("%s", buffer);
@@ -178,9 +255,6 @@ int main()
     "Please hit Enter to exit."
   );
 
-  #ifndef TEST
-  while (getchar() != '\n');
-  #endif
   while (getchar() != '\n');
 
   return 0;
