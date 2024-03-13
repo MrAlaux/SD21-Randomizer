@@ -6,15 +6,14 @@
 
 typedef enum { false, true } boolean;
 
-boolean Get_Number(char **getter)
+boolean Get_String(char **getter)
 {
-  const size_t MAXCHARS = 32;
+  const size_t MAXCHARS = 64;
   char input[MAXCHARS];
-  size_t input_size;
 
   fgets(input, MAXCHARS, stdin);
 
-  if (!(input_size = strlen(input) - 1)) { return true; }
+  if (!(strlen(input) - 1)) { return true; } // Don't count the newline
 
   *getter = strdup(input);
   return false;
@@ -23,50 +22,70 @@ boolean Get_Number(char **getter)
 boolean Get_Int(int *getter)
 {
   char *input;
-  size_t input_size;
 
-  if (Get_Number(&input)) { goto error; }
+  if (Get_String(&input)) { goto error1; }
 
-  input_size = strlen(input) - 1; // Don't count the newline
+  const size_t input_size = strlen(input) - 1; // Don't count the newline
+
+  boolean num   = false,
+          minus = false;
 
   for (int i = 0;  i < input_size;  i++)
   {
-    if (!('0' <= input[i] && input[i] <= '9'))
-    { goto error; }
+    const char c = input[i];
+
+    if ('0' <= c && c <= '9')
+    { num = true; }
+    else if (c == '-' && !minus && !i)
+    { minus = true; }
+    else
+    { goto error2; }
   }
+
+  if (!num) { goto error2; }
 
   *getter = atoi(input);
   free(input);
   return false;
 
-  error: return true;
+  error2: free(input);
+  error1: return true;
 }
 
 boolean Get_Float(float *getter)
 {
   char *input;
-  size_t input_size;
-  int sep = 0;
 
-  if (Get_Number(&input)) { goto error; }
+  if (Get_String(&input)) { goto error1; }
 
-  input_size = strlen(input) - 1; // Don't count the newline
+  const size_t input_size = strlen(input) - 1; // Don't count the newline
+
+  boolean num   = false,
+          dot   = false,
+          minus = false;
 
   for (int i = 0;  i < input_size;  i++)
   {
-    if (input[i] == '.') {
-      if (1 < ++sep)
-      { goto error; }
-    }
-    else if (!('0' <= input[i] && input[i] <= '9'))
-    { goto error; }
+    const char c = input[i];
+
+    if ('0' <= c && c <= '9')
+    { num = true; }
+    else if (c == '.' && !dot)
+    { dot = true; }
+    else if (c == '-' && !minus && !i)
+    { minus = true; }
+    else
+    { goto error2; }
   }
+
+  if (!num) { goto error2; }
 
   *getter = atof(input);
   free(input);
   return false;
 
-  error: return true;
+  error2: free(input);
+  error1: return true;
 }
 
 
@@ -145,22 +164,30 @@ char *Random(int index)
 
 int main()
 {
-  int i;
-  int num_states, func_index;
-  FILE *fptr;
-
   #if 0
   #define TEST
   #endif
 
-  for (i = 0;  i < MAXPARMS;  i++) { min[i] = max[i] = 0.0f; }
+  FILE *fptr = fopen("./sd21-randomizer.txt", "w");
+
+  if (!fptr) {
+    puts("ERROR opening output file.");
+    exit(1);
+  }
 
   srand(time(NULL));
+
+  int i;
+
+  for (i = 0;  i < MAXPARMS;  i++) { min[i] = max[i] = 0.0f; }
+
+  int num_states;
 
   while (true) {
     printf("Enter number of states [int]: ");
     #ifndef TEST
-    if (!Get_Int(&num_states)) { break; }
+    if (!Get_Int(&num_states) && num_states > 0)
+    { break; }
     #else
     printf("%i\n", num_states = 16);
     break;
@@ -174,10 +201,13 @@ int main()
   { printf("[%i] %s(%s)\n", i, funcs[i].name, funcs[i].description); }
   puts("");
 
+  int func_index;
+
   while (true) {
     printf("Select function [int]: ");
     #ifndef TEST
-    if (!Get_Int(&func_index)) { break; }
+    if (!Get_Int(&func_index) && (0 <= func_index && func_index < NUMFUNCS))
+    { break; }
     #else
     printf("%i\n", func_index = 0);
     break;
@@ -215,36 +245,28 @@ int main()
     puts("");
   }
 
-  fptr = fopen("./sd21-randomizer.txt", "w");
+  char format[BUFSIZ];
 
-  if (!fptr) {
-    puts("ERROR opening file.");   
-    exit(1);             
-  }
-  else {
-    char format[BUFSIZ];
+  snprintf(
+    format, BUFSIZ,
+    "    Spawn%%i:\n"
+    "      TNT1 A 1 %s%s\n"
+    "      Stop\n",
+    func->name, func->prototype
+  );
+
+  for (i = 1;  i <= num_states;  i++)
+  {
+    char buffer[BUFSIZ];
 
     snprintf(
-      format, BUFSIZ,
-      "    Spawn%%i:\n"
-      "      TNT1 A 1 %s%s\n"
-      "      Stop\n",
-      func->name, func->prototype
+      buffer, BUFSIZ,
+      format,
+      i, Random(0), Random(1), Random(2), Random(3), Random(4), Random(5), Random(6), Random(7)
     );
 
-    for (i = 1;  i <= num_states;  i++)
-    {
-      char buffer[BUFSIZ];
-
-      snprintf(
-        buffer, BUFSIZ,
-        format,
-        i, Random(0), Random(1), Random(2), Random(3), Random(4), Random(5), Random(6), Random(7)
-      );
-
-      printf("%s", buffer);
-      fprintf(fptr, "%s", buffer);
-    }
+    printf("%s", buffer);
+    fprintf(fptr, "%s", buffer);
   }
 
   fclose(fptr);
