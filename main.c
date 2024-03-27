@@ -128,10 +128,9 @@ const func_t funcs[NUMFUNCS] = {
 
 float min[MAXPARMS], max[MAXPARMS];
 
-// Taken from StackOverflow
 float Random_Float(int index)
 {
-  return min[index] + ((rand() / (float) RAND_MAX) * (max[index] - min[index]));
+  return min[index] + (((double) rand() / RAND_MAX) * (max[index] - min[index]));
 }
 
 char parameters[MAXPARMS][BUFSIZ];
