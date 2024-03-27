@@ -8,10 +8,10 @@ typedef enum { false, true } boolean;
 
 boolean Get_String(char **getter)
 {
-  const size_t MAXCHARS = 64;
-  char input[MAXCHARS];
+  const size_t MAX_CHARS = 64;
+  char input[MAX_CHARS];
 
-  fgets(input, MAXCHARS, stdin);
+  fgets(input, MAX_CHARS, stdin);
 
   if (!(strlen(input) - 1)) { return true; } // Don't count the newline
 
@@ -89,15 +89,15 @@ boolean Get_Float(float *getter)
 }
 
 
-#define MAXPARMS 8
+#define MAX_PARMS 8
 
 
 typedef struct {
   const char name[32];
   const char description[80];
   const char prototype[40];
-  const int  numparms;
-  const enum { T_INT, T_FLOAT, T_STRING } parmtype[MAXPARMS];
+  const int  num_parms;
+  const enum { T_INT, T_FLOAT, T_STRING } parm_type[MAX_PARMS];
 } func_t;
 
 const func_t *func;
@@ -106,10 +106,10 @@ typedef enum {
   FUNC_SPAWNOBJECT,
   FUNC_MONSTERPROJECTILE,
 
-  NUMFUNCS
+  NUM_FUNCS
 } funcs_t;
 
-const func_t funcs[NUMFUNCS] = {
+const func_t funcs[NUM_FUNCS] = {
   {
     "A_SpawnObject",
     "type, angle, x_ofs, y_ofs, z_ofs, x_vel, y_vel, z_vel",
@@ -126,34 +126,34 @@ const func_t funcs[NUMFUNCS] = {
 };
 
 
-float min[MAXPARMS], max[MAXPARMS];
+float min[MAX_PARMS], max[MAX_PARMS];
 
 float Random_Float(int index)
 {
   return min[index] + (((double) rand() / RAND_MAX) * (max[index] - min[index]));
 }
 
-char parameters[MAXPARMS][BUFSIZ];
+char parameters[MAX_PARMS][32];
 
 char *Random(int index)
 {
   char *const parameter = parameters[index];
 
-  if (func->numparms <= index) {
-    snprintf(parameter, BUFSIZ, "");
+  if (func->num_parms <= index) {
+    snprintf(parameter, 32, "");
   }
-  else switch (func->parmtype[index])
+  else switch (func->parm_type[index])
   {
     case T_INT:
-      snprintf(parameter, BUFSIZ, "%i", (int) round(Random_Float(index)));
+      snprintf(parameter, 32, "%i", (int) round(Random_Float(index)));
       break;
 
     case T_FLOAT:
-      snprintf(parameter, BUFSIZ, "%0.1f", Random_Float(index));
+      snprintf(parameter, 32, "%0.1f", Random_Float(index));
       break;
 
     case T_STRING:
-      snprintf(parameter, BUFSIZ, "PARM%i", index + 1);
+      snprintf(parameter, 32, "PARM%i", index + 1);
       break;
   }
 
@@ -178,7 +178,7 @@ int main()
 
   int i;
 
-  for (i = 0;  i < MAXPARMS;  i++) { min[i] = max[i] = 0.0f; }
+  for (i = 0;  i < MAX_PARMS;  i++) { min[i] = max[i] = 0.0f; }
 
   int num_states;
 
@@ -196,7 +196,7 @@ int main()
   puts("");
 
   printf("Available functions:\n");
-  for (i = 0;  i < NUMFUNCS;  i++)
+  for (i = 0;  i < NUM_FUNCS;  i++)
   { printf("[%i] %s(%s)\n", i, funcs[i].name, funcs[i].description); }
   puts("");
 
@@ -205,7 +205,7 @@ int main()
   while (true) {
     printf("Select function [int]: ");
     #ifndef TEST
-    if (!Get_Int(&func_index) && (0 <= func_index && func_index < NUMFUNCS))
+    if (!Get_Int(&func_index) && (0 <= func_index && func_index < NUM_FUNCS))
     { break; }
     #else
     printf("%i\n", func_index = 0);
@@ -217,9 +217,9 @@ int main()
 
   func = &funcs[func_index];
 
-  for (i = 0;  i < func->numparms;  i++)
+  for (i = 0;  i < func->num_parms;  i++)
   {
-    if (func->parmtype[i] == T_STRING) { continue; }
+    if (func->parm_type[i] == T_STRING) { continue; }
 
     while (true) {
       printf("Enter min%i [float]: ", i + 1);
@@ -244,10 +244,10 @@ int main()
     puts("");
   }
 
-  char format[BUFSIZ];
+  char format[256];
 
   snprintf(
-    format, BUFSIZ,
+    format, 256,
     "    Spawn%%i:\n"
     "      TNT1 A 1 %s%s\n"
     "      Stop\n",
@@ -256,10 +256,10 @@ int main()
 
   for (i = 1;  i <= num_states;  i++)
   {
-    char buffer[BUFSIZ];
+    char buffer[512];
 
     snprintf(
-      buffer, BUFSIZ,
+      buffer, 512,
       format,
       i, Random(0), Random(1), Random(2), Random(3), Random(4), Random(5), Random(6), Random(7)
     );
