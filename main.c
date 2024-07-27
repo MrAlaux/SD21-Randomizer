@@ -139,7 +139,8 @@ char *Random(int index)
 {
   char *const parameter = parameters[index];
 
-  if (func->num_parms <= index) {
+  if (func->num_parms <= index)
+  {
     snprintf(parameter, 32, "");
   }
   else switch (func->parm_type[index])
@@ -182,8 +183,10 @@ int main()
 
   int num_states;
 
-  while (true) {
+  while (true)
+  {
     printf("Enter number of states [int]: ");
+
     #ifndef TEST
     if (!Get_Int(&num_states) && num_states > 0)
     { break; }
@@ -196,14 +199,18 @@ int main()
   puts("");
 
   printf("Available functions:\n");
+
   for (i = 0;  i < NUM_FUNCS;  i++)
   { printf("[%i] %s(%s)\n", i, funcs[i].name, funcs[i].description); }
+
   puts("");
 
   int func_index;
 
-  while (true) {
+  while (true)
+  {
     printf("Select function [int]: ");
+
     #ifndef TEST
     if (!Get_Int(&func_index) && (0 <= func_index && func_index < NUM_FUNCS))
     { break; }
@@ -221,20 +228,26 @@ int main()
   {
     if (func->parm_type[i] == T_STRING) { continue; }
 
-    while (true) {
+    while (true)
+    {
       printf("Enter min%i [float]: ", i + 1);
+
       #ifndef TEST
-      if (!Get_Float(&min[i])) { break; }
+      if (!Get_Float(&min[i]))
+      { break; }
       #else
       printf("%f\n", min[i] = i + 1.0);
       break;
       #endif
     }
 
-    while (true) {
+    while (true)
+    {
       printf("Enter max%i [float]: ", i + 1);
+
       #ifndef TEST
-      if (!Get_Float(&max[i])) { break; }
+      if (!Get_Float(&max[i]))
+      { break; }
       #else
       printf("%f\n", max[i] = i + 2.0);
       break;
@@ -250,7 +263,7 @@ int main()
     format, 256,
     "    Spawn%%i:\n"
     "      TNT1 A 1 %s%s\n"
-    "      Stop\n",
+    "      stop\n",
     func->name, func->prototype
   );
 
